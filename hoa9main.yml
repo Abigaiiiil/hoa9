@@ -1,0 +1,45 @@
+---
+- name: Set up CA with SSL
+  hosts: control_node
+  become: yes
+  tasks:
+    - name: installing required packages
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - openssl
+        - easy-rsa
+
+    - name: creating a CA directory
+      file:
+        path: "/etc/ssl/ca"
+        state: directory
+
+    - name: generate a CA private key
+      openssl_privatekey:
+        path: "/etc/ssl/ca/ca.key"
+        size: 2048
+
+    - name: generate a CA certificate
+      openssl_csr:
+        path: "/etc/ssl/ca/ca.csr"
+        privatekey_path: "/etc/ssl/ca/ca.key"
+        common_name: "Laxamana CA"
+        organization_name: "Technological Institute of the Philippines"
+        country_name: "PH"
+
+    - name: signing the CA
+      openssl_certificate:
+        path: "/etc/ssl/ca/ca.crt"
+        privatekey_path: "/etc/ssl/ca/ca.key"
+        csr_path: "/etc/ssl/ca/ca.csr"
+        provider: selfsigned
+
+    - name: Debug
+      debug:
+        msg: "Path: {{ item }}"
+      loop:
+        - "/etc/ssl/ca/ca.crt"
+        - "/etc/ssl/ca/ca.key"
+        - "/etc/ssl/ca/ca.csr"
